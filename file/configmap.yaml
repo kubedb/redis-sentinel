@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: predis-conf
+  namespace: "default"
+  labels:
+    app: predis-conf
+data:
+  redis.conf: |-
+    # User-supplied configuration:
+    # Enable AOF https://redis.io/topics/persistence#append-only-file
+    appendonly yes
+    # Disable RDB persistence, AOF persistence already enabled.
+    save ""
+#  master.conf: |-
+#    dir /data
+#    rename-command FLUSHDB ""
+#    rename-command FLUSHALL ""
+#  replica.conf: |-
+#    dir /data
+#    slave-read-only yes
+#    rename-command FLUSHDB ""
+#    rename-command FLUSHALL ""
+#  sentinel.conf: |-
+#    dir "/tmp"
+#    bind 0.0.0.0
+#    port 26379
+#    sentinel monitor mymaster my-release2-redischart-node-0.my-release2-redischart-headless.default.svc.cluster.local 6379 2
+#    sentinel down-after-milliseconds mymaster 20000
+#    sentinel failover-timeout mymaster 18000
+#    sentinel parallel-syncs mymaster 1
