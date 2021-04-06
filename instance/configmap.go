@@ -10,7 +10,7 @@ import (
 
 //CreateClientset-------------------------------------------------------------------- create an clients ------------------------------------------------------
 func CreateConfigmap() *apiv1.ConfigMap {
-	var clientset = createClientset()
+	var clientset = CreateClientset()
 	fmt.Println("Creating Configmap ... ")
 	confClient := clientset.CoreV1().ConfigMaps(apiv1.NamespaceDefault)
 

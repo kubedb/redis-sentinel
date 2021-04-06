@@ -3,16 +3,13 @@ package instance
 import (
 	"context"
 	"fmt"
-
-
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 )
 
 func CreateHeadlessService() {
 	fmt.Println("Creating Service ...")
-	var clientset = createClientset()
+	var clientset = CreateClientset()
 	svcClient := clientset.CoreV1().Services(apiv1.NamespaceDefault)
 	service := &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{

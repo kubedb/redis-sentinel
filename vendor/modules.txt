@@ -86,6 +86,9 @@ golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 golang.org/x/time/rate
+# gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
+## explicit
+gomodules.xyz/pointer
 # google.golang.org/appengine v1.6.1
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/base

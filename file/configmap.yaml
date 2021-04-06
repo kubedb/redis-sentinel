@@ -9,18 +9,22 @@ data:
   redis.conf: |-
     # User-supplied configuration:
     # Enable AOF https://redis.io/topics/persistence#append-only-file
+    protected-mode no
     appendonly yes
+    slaveof predis-svc1-master.default.svc 6379
     # Disable RDB persistence, AOF persistence already enabled.
     save ""
-#  master.conf: |-
-#    dir /data
-#    rename-command FLUSHDB ""
-#    rename-command FLUSHALL ""
-#  replica.conf: |-
-#    dir /data
-#    slave-read-only yes
-#    rename-command FLUSHDB ""
-#    rename-command FLUSHALL ""
+  master.conf: |-
+    dir /data
+    protected-mode no
+    appendonly yes
+
+  replica.conf: |-
+    dir /data
+    protected-mode no
+    appendonly yes
+    slaveof predis-svc1-master.default.svc 6379
+
 #  sentinel.conf: |-
 #    dir "/tmp"
 #    bind 0.0.0.0

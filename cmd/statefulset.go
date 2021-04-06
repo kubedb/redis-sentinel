@@ -12,7 +12,7 @@ var (
 )
 
 var createStateCMD = &cobra.Command{
-	Use: "new-statefulset",
+	Use: "statefulset",
 
 	Short: "",
 	Long:  "",

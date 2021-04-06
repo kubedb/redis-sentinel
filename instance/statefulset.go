@@ -4,8 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	"path/filepath"
+
 
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
@@ -13,10 +15,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"gomodules.xyz/pointer"
 )
 
-//createClientset-------------------------------------------------------------------- create an clients ------------------------------------------------------
-func createClientset() kubernetes.Interface {
+//CreateClientset-------------------------------------------------------------------- create an clients ------------------------------------------------------
+func CreateClientset() kubernetes.Interface {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -36,10 +39,11 @@ func createClientset() kubernetes.Interface {
 	return clientset
 }
 
+
 //CreateStatefulset -------------------------------------------------------------------- create the statefulset ---------------------------------------------------
 func CreateStatefulset(image string, replica int32) {
 
-	var clientset = createClientset()
+	var clientset = CreateClientset()
 	fmt.Println("Creating Statefulset ... ")
 	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
 
@@ -66,6 +70,21 @@ func CreateStatefulset(image string, replica int32) {
 							Name:            "predis",
 							Image:           "docker.io/bitnami/redis:6.0.12-debian-10-r3",
 							ImagePullPolicy: "IfNotPresent",
+							Command: []string{
+								"/bin/bash",
+								"-c",
+								//"redis-server",
+							},
+							Args: []string{
+								"cd /data/db && redis-server /data/predis-data/redis.conf --port 6380",
+								//"/data/predis-data/redis.conf",
+								//"--port",
+								//"6379",
+						    },
+							SecurityContext: &apiv1.SecurityContext{
+
+								RunAsUser: pointer.Int64P(0),
+							},
 
 							Ports: []apiv1.ContainerPort{
 								{
@@ -99,6 +118,7 @@ func CreateStatefulset(image string, replica int32) {
 									LocalObjectReference: apiv1.LocalObjectReference{
 										Name: "predis-conf",
 									},
+									DefaultMode: int32Ptr(0777),
 								},
 							},
 						},
@@ -108,7 +128,7 @@ func CreateStatefulset(image string, replica int32) {
 			VolumeClaimTemplates: []apiv1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "predis-vol",
+						Name: "predis-vol",  //name deya zabe eccha moto
 					},
 					Spec: apiv1.PersistentVolumeClaimSpec{
 						AccessModes:      []apiv1.PersistentVolumeAccessMode{apiv1.ReadWriteOnce},
@@ -135,7 +155,7 @@ func CreateStatefulset(image string, replica int32) {
 
 func ListStatefulSet() {
 	fmt.Println("*****   Listing all StatefulSets   ******  ")
-	var clientset = createClientset()
+	var clientset = CreateClientset()
 
 	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
 	list, err := stsClient.List(context.TODO(), metav1.ListOptions{})
@@ -146,10 +166,26 @@ func ListStatefulSet() {
 	for _, item := range list.Items {
 		fmt.Printf("---> %s (%d replicas)\n", item.Name, *item.Spec.Replicas)
 	}
+
+
+	// emon test
+	pod, err := clientset.CoreV1().Pods("default").Get(context.TODO(),"predis-cluster-0",metav1.GetOptions{})
+	if err != nil {
+		fmt.Println("........................errrrrr.....",err)
+	}
+	labels := pod.Labels
+	labels["pod/role"]="master"
+	pod.Labels = labels
+	pod, err = clientset.CoreV1().Pods("default").Update(context.TODO(), pod, metav1.UpdateOptions{})
+	if err != nil {
+		fmt.Println("...........fdhjadskjdfaghkad", err)
+	}
+	fmt.Println(pod)
+
 }
 
 func DeleteStatefulSet() {
-	var clientset = createClientset()
+	var clientset = CreateClientset()
 	deploymentsClient := clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
 
 	fmt.Println("Deleting deployment...")
@@ -164,7 +200,7 @@ func DeleteStatefulSet() {
 
 //func UpdateStatefulSet() {
 //	fmt.Printf("Updating StatefulSet %q replicas to %d\n", stsName, replicas)
-//	var clientset := createClientset()
+//	var clientset := CreateClientset()
 //	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
 //	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 //		result, getErr := stsClient.Get(context.TODO(), stsName, metav1.GetOptions{})

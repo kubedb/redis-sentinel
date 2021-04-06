@@ -7,7 +7,7 @@ import (
 )
 
 var createServiceCMD = &cobra.Command{
-	Use: "new-Service",
+	Use: "service",
 
 	Short: "",
 	Long:  "",
@@ -18,6 +18,20 @@ var createServiceCMD = &cobra.Command{
 	},
 }
 
+var createSvc1CMD = &cobra.Command{
+	Use: "svc1",
+
+	Short: "",
+	Long:  "",
+
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Create Svc1 cmd called")
+		instance.CreateSvc1()
+	},
+}
+
 func init() {
 	createCMD.AddCommand(createServiceCMD)
+	createCMD.AddCommand(createSvc1CMD)
+	fmt.Println(".....")
 }
