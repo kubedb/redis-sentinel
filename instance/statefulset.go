@@ -65,22 +65,41 @@ func CreateStatefulset(image string, replica int32) {
 					},
 				},
 				Spec: apiv1.PodSpec{
+					InitContainers: []apiv1.Container{
+						{
+							Name: "predis-init-container",
+							Image: "pranganmajumder/predis-init:0.0.1",
+							VolumeMounts: []apiv1.VolumeMount{
+								{
+									Name:      "config-vol",
+									MountPath: "/data/predis-data",
+								},
+							},
+							Env: []apiv1.EnvVar{
+								{
+									Name:      "POD_NAME",
+									ValueFrom: &apiv1.EnvVarSource{
+										FieldRef:         &apiv1.ObjectFieldSelector{
+											FieldPath:  "metadata.name",
+										},
+									},
+								},
+							},
+						},
+					},
 					Containers: []apiv1.Container{
 						{
 							Name:            "predis",
 							Image:           "docker.io/bitnami/redis:6.0.12-debian-10-r3",
 							ImagePullPolicy: "IfNotPresent",
-							Command: []string{
-								"/bin/bash",
-								"-c",
-								//"redis-server",
-							},
-							Args: []string{
-								"cd /data/db && redis-server /data/predis-data/redis.conf --port 6380",
-								//"/data/predis-data/redis.conf",
-								//"--port",
-								//"6379",
-						    },
+							//Command: []string{
+							//	"/bin/bash",
+							//	"-c",
+							//},
+							//Args: []string{
+							//	//"cd /data/db && redis-server /data/predis-data/redis.conf --port 6380",
+							//	"/data/scripts/start-node.sh",
+						    //},
 							SecurityContext: &apiv1.SecurityContext{
 
 								RunAsUser: pointer.Int64P(0),
@@ -101,6 +120,10 @@ func CreateStatefulset(image string, replica int32) {
 									Name:      "config-vol",
 									MountPath: "/data/predis-data",
 								},
+								{
+									Name: "start-scripts",
+									MountPath: "/data/scripts",
+								},
 							},
 							Env: []apiv1.EnvVar{
 								{
@@ -112,11 +135,26 @@ func CreateStatefulset(image string, replica int32) {
 					},
 					Volumes: []apiv1.Volume{
 						{
+							//Name: "config-vol",
+							//VolumeSource: apiv1.VolumeSource{
+							//	ConfigMap: &apiv1.ConfigMapVolumeSource{
+							//		LocalObjectReference: apiv1.LocalObjectReference{
+							//			Name: "predis-conf",
+							//		},
+							//		DefaultMode: int32Ptr(0777),
+							//	},
+							//},
 							Name: "config-vol",
+							VolumeSource: apiv1.VolumeSource{
+								EmptyDir: &apiv1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "start-scripts",
 							VolumeSource: apiv1.VolumeSource{
 								ConfigMap: &apiv1.ConfigMapVolumeSource{
 									LocalObjectReference: apiv1.LocalObjectReference{
-										Name: "predis-conf",
+										Name: "predis-scripts",
 									},
 									DefaultMode: int32Ptr(0777),
 								},
