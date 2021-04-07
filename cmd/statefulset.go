@@ -23,6 +23,19 @@ var createStateCMD = &cobra.Command{
 	},
 }
 
+var createSentinelStateCMD = &cobra.Command{
+	Use: "sentistatefulset",
+
+	Short: "",
+	Long:  "",
+
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Create statefulset cmd called")
+		instance.CreateStatefulsetForSentinel()
+	},
+}
+
+
 var listStateCMD = &cobra.Command{
 	Use: "list-statefulset",
 
@@ -51,6 +64,7 @@ func init() {
 	createCMD.AddCommand(createStateCMD)
 	createCMD.AddCommand(listStateCMD)
 	createCMD.AddCommand(deleteStateCMD)
+	createCMD.AddCommand(createSentinelStateCMD)
 
 	createStateCMD.PersistentFlags().StringVarP(&defaultImage, "image", "i", "pranganmajumder/go-basic-restapi:1.0.0", "It sets the custom image you want")
 	createStateCMD.PersistentFlags().Int32VarP(&defaultReplica, "replica", "r", 3, "It sets the number of replica user want")

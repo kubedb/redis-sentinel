@@ -6,61 +6,15 @@ metadata:
   labels:
     app: predis-scripts
 data:
-  start-node.sh: |
+  run.sh: |-
     #!/bin/bash
-
-    . /opt/bitnami/scripts/libos.sh
-    . /opt/bitnami/scripts/liblog.sh
-    . /opt/bitnami/scripts/libvalidations.sh
-
-    not_exists_dns_entry() {
-      myip=$(hostname -i)
-      myip "$myip"
-
-      if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
-          getnet "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )"
-          warn "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
-          return 1
-      fi
-      info "$HEADLESS_SERVICE has my IP: ${myip}"
-      return 0
-    }
-
-    HEADLESS_SERVICE="predis-svc1-master.default.svc.cluster.local"
-
-    export REDIS_REPLICATION_MODE="slave"
-    if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i) ")" ]]; then
-      export REDIS_REPLICATION_MODE="master"
-    fi
-
-
-    if [[ "$REDIS_REPLICATION_MODE" == "master" ]]; then
-      echo "I am master"
-      if [[ ! -f /data/db/master.conf ]];then
-        cp /data/predis-data/master.conf /data/db/master.conf
-      fi
+    cp /config/redis.conf /data/redis.conf
+    echo "..........$HOSTNAME"
+    if [[ "$HOSTNAME" == "predis-sts-0" ]]; then
+      echo "..........$HOSTNAME"
+      exec redis-server /data/redis.conf
     else
-      if [[ ! -f /data/db/replica.conf ]];then
-        cp /data/predis-data/replica.conf /data/db/replica.conf
-      fi
+      echo -e "\nslaveof predis-sts-0.predis-svc.default.svc.cluster.local 6379" >>/data/redis.conf
+      exec redis-server /data/redis.conf
     fi
-
-    if [[ ! -f /data/db/redis.conf ]];then
-      cp /data/predis-data/redis.conf /data/db/redis.conf
-    fi
-    ARGS=("--port" "${REDIS_PORT}")
-
-    if [[ "$REDIS_REPLICATION_MODE" == "slave" ]]; then
-      ARGS+=("--slaveof" "$HEADLESS_SERVICE" "6379")
-    fi
-    ARGS+=("--protected-mode" "no")
-
-    if [[ "$REDIS_REPLICATION_MODE" == "master" ]]; then
-      ARGS+=("--include" "")
-    else
-      ARGS+=("--include" "/opt/bitnami/redis/etc/replica.conf")
-    fi
-
-    ARGS+=("--include" "/opt/bitnami/redis/etc/redis.conf")
-    exec /run.sh "${ARGS[@]}"
 

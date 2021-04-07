@@ -8,14 +8,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"path/filepath"
 
-
+	"gomodules.xyz/pointer"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"gomodules.xyz/pointer"
 )
 
 //CreateClientset-------------------------------------------------------------------- create an clients ------------------------------------------------------
@@ -39,7 +38,6 @@ func CreateClientset() kubernetes.Interface {
 	return clientset
 }
 
-
 //CreateStatefulset -------------------------------------------------------------------- create the statefulset ---------------------------------------------------
 func CreateStatefulset(image string, replica int32) {
 
@@ -52,7 +50,7 @@ func CreateStatefulset(image string, replica int32) {
 			Name: "predis-sts",
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: int32Ptr(replica),
+			Replicas: int32Ptr(2),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "predisdb",
@@ -65,41 +63,41 @@ func CreateStatefulset(image string, replica int32) {
 					},
 				},
 				Spec: apiv1.PodSpec{
-					InitContainers: []apiv1.Container{
-						{
-							Name: "predis-init-container",
-							Image: "pranganmajumder/predis-init:0.0.1",
-							VolumeMounts: []apiv1.VolumeMount{
-								{
-									Name:      "config-vol",
-									MountPath: "/data/predis-data",
-								},
-							},
-							Env: []apiv1.EnvVar{
-								{
-									Name:      "POD_NAME",
-									ValueFrom: &apiv1.EnvVarSource{
-										FieldRef:         &apiv1.ObjectFieldSelector{
-											FieldPath:  "metadata.name",
-										},
-									},
-								},
-							},
-						},
-					},
+					//InitContainers: []apiv1.Container{
+					//	{
+					//		Name:  "predis-init-container",
+					//		Image: "pranganmajumder/predis-init:0.0.1",
+					//		VolumeMounts: []apiv1.VolumeMount{
+					//			{
+					//				Name:      "config-vol",
+					//				MountPath: "/data/predis-data",
+					//			},
+					//		},
+					//		Env: []apiv1.EnvVar{
+					//			{
+					//				Name: "POD_NAME",
+					//				ValueFrom: &apiv1.EnvVarSource{
+					//					FieldRef: &apiv1.ObjectFieldSelector{
+					//						FieldPath: "metadata.name",
+					//					},
+					//				},
+					//			},
+					//		},
+					//	},
+					//},
 					Containers: []apiv1.Container{
 						{
 							Name:            "predis",
-							Image:           "docker.io/bitnami/redis:6.0.12-debian-10-r3",
+							Image:          "redis:6.2.1",
 							ImagePullPolicy: "IfNotPresent",
-							//Command: []string{
-							//	"/bin/bash",
-							//	"-c",
-							//},
+							Command: []string{
+								"/scripts/run.sh",
+							},
 							//Args: []string{
 							//	//"cd /data/db && redis-server /data/predis-data/redis.conf --port 6380",
-							//	"/data/scripts/start-node.sh",
-						    //},
+							//	//"/data/scripts/start-node.sh",
+							//	"redis-server /data/redis.conf",
+							//},
 							SecurityContext: &apiv1.SecurityContext{
 
 								RunAsUser: pointer.Int64P(0),
@@ -113,44 +111,34 @@ func CreateStatefulset(image string, replica int32) {
 							},
 							VolumeMounts: []apiv1.VolumeMount{
 								{
-									Name:      "predis-vol",
-									MountPath: "/data/db",
-								},
-								{
 									Name:      "config-vol",
-									MountPath: "/data/predis-data",
+									MountPath: "/config",
 								},
 								{
-									Name: "start-scripts",
-									MountPath: "/data/scripts",
+									Name:      "predis-vol",
+									MountPath: "/data",
 								},
-							},
-							Env: []apiv1.EnvVar{
 								{
-									Name: "ALLOW_EMPTY_PASSWORD",
-									Value: "yes",
+									Name:      "script-vol",
+									MountPath: "/scripts",
 								},
 							},
 						},
 					},
 					Volumes: []apiv1.Volume{
 						{
-							//Name: "config-vol",
-							//VolumeSource: apiv1.VolumeSource{
-							//	ConfigMap: &apiv1.ConfigMapVolumeSource{
-							//		LocalObjectReference: apiv1.LocalObjectReference{
-							//			Name: "predis-conf",
-							//		},
-							//		DefaultMode: int32Ptr(0777),
-							//	},
-							//},
 							Name: "config-vol",
 							VolumeSource: apiv1.VolumeSource{
-								EmptyDir: &apiv1.EmptyDirVolumeSource{},
+								ConfigMap: &apiv1.ConfigMapVolumeSource{
+									LocalObjectReference: apiv1.LocalObjectReference{
+										Name: "predis-conf",
+									},
+									DefaultMode: int32Ptr(0777),
+								},
 							},
 						},
 						{
-							Name: "start-scripts",
+							Name: "script-vol",
 							VolumeSource: apiv1.VolumeSource{
 								ConfigMap: &apiv1.ConfigMapVolumeSource{
 									LocalObjectReference: apiv1.LocalObjectReference{
@@ -160,13 +148,14 @@ func CreateStatefulset(image string, replica int32) {
 								},
 							},
 						},
+
 					},
 				},
 			},
 			VolumeClaimTemplates: []apiv1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "predis-vol",  //name deya zabe eccha moto
+						Name: "predis-vol",
 					},
 					Spec: apiv1.PersistentVolumeClaimSpec{
 						AccessModes:      []apiv1.PersistentVolumeAccessMode{apiv1.ReadWriteOnce},
@@ -179,7 +168,7 @@ func CreateStatefulset(image string, replica int32) {
 					},
 				},
 			},
-			ServiceName: "predis-service",
+			ServiceName: "predis-svc",
 		},
 	}
 
@@ -205,14 +194,13 @@ func ListStatefulSet() {
 		fmt.Printf("---> %s (%d replicas)\n", item.Name, *item.Spec.Replicas)
 	}
 
-
 	// emon test
-	pod, err := clientset.CoreV1().Pods("default").Get(context.TODO(),"predis-cluster-0",metav1.GetOptions{})
+	pod, err := clientset.CoreV1().Pods("default").Get(context.TODO(), "predis-cluster-0", metav1.GetOptions{})
 	if err != nil {
-		fmt.Println("........................errrrrr.....",err)
+		fmt.Println("........................errrrrr.....", err)
 	}
 	labels := pod.Labels
-	labels["pod/role"]="master"
+	labels["pod/role"] = "master"
 	pod.Labels = labels
 	pod, err = clientset.CoreV1().Pods("default").Update(context.TODO(), pod, metav1.UpdateOptions{})
 	if err != nil {
