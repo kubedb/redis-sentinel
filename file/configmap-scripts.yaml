@@ -9,12 +9,30 @@ data:
   run.sh: |-
     #!/bin/bash
     cp /config/redis.conf /data/redis.conf
+
     echo "..........$HOSTNAME"
-    if [[ "$HOSTNAME" == "predis-sts-0" ]]; then
-      echo "..........$HOSTNAME"
+
+    sentinel_info_command="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
+    REDIS_SENTINEL_INFO=($($sentinel_info_command))
+    REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
+    REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
+
+    echo "----------$REDIS_MASTER_HOST-------------"
+    echo "----------$REDIS_MASTER_PORT_NUMBER------"
+    echo "-----------------------------------------"
+
+    if [[ ${#REDIS_SENTINEL_INFO[@]} == 0 && $HOSTNAME == "predis-sts-0" ]]; then
       exec redis-server /data/redis.conf
     else
-      echo -e "\nslaveof predis-sts-0.predis-svc.default.svc.cluster.local 6379" >>/data/redis.conf
+      echo -e "\nslaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER" >> /data/redis.conf
       exec redis-server /data/redis.conf
     fi
+
+#    if [[ "$HOSTNAME" == "predis-sts-0" ]]; then
+#      echo "..........$HOSTNAME"
+#      exec redis-server /data/redis.conf
+#    else
+#      echo -e "\nslaveof predis-sts-0.predis-svc.default.svc.cluster.local 6379" >>/data/redis.conf
+#      exec redis-server /data/redis.conf
+#    fi
 
