@@ -24,7 +24,7 @@ func CreateStatefulsetForSentinel() {
 			Name: "sentinel-sts",
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: int32Ptr(1),
+			Replicas: int32Ptr(3),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "sentinel",

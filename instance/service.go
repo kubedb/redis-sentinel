@@ -42,7 +42,7 @@ func CreateHeadlessService() {
 
 
 func CreateSentinelHeadlessService() {
-	fmt.Println("Creating Service ...")
+	fmt.Println("Creating Service for sentinel...")
 	var clientset = CreateClientset()
 	svcClient := clientset.CoreV1().Services(apiv1.NamespaceDefault)
 	service := &apiv1.Service{

@@ -11,6 +11,6 @@ data:
     cp /config/sentinel.conf /data/sentinel.conf
 
     echo " got scripts............"
-
+    exec redis-sentinel /data/sentinel.conf
 
 
