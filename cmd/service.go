@@ -7,26 +7,26 @@ import (
 )
 
 var createServiceCMD = &cobra.Command{
-	Use: "service",
+	Use: "redis-service",
 
 	Short: "",
 	Long:  "",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Create Service cmd called")
+		fmt.Println("Created Service  for redis server ")
 		instance.CreateHeadlessService()
 	},
 }
 
 
 var createSentinelSvcCMD = &cobra.Command{
-	Use: "svc1",
+	Use: "senti-service",
 
 	Short: "",
 	Long:  "",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Create Svc1 cmd called")
+		fmt.Println("Create senti service cmd called")
 		instance.CreateSentinelHeadlessService()
 	},
 }
