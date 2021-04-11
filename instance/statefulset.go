@@ -109,6 +109,7 @@ func CreateStatefulset(image string, replica int32) {
 									ContainerPort: 6379,
 								},
 							},
+
 							VolumeMounts: []apiv1.VolumeMount{
 								{
 									Name:      "config-vol",
