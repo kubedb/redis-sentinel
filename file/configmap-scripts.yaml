@@ -9,12 +9,12 @@ data:
   run.sh: |-
     #!/bin/bash
     cp /config/redis.conf /data/redis.conf
-
+    down=5000
+    timeout=5000
     flag=1
     not_exists_dns_entry() {
        myip=$(hostname -i)
        echo " my ip $myip"
-
        if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
            echo "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
            flag=1
@@ -30,7 +30,6 @@ data:
       echo "flag =  $flag "
       not_exists_dns_entry
     done
-
     echo "..........$HOSTNAME"
 
     sentinel_info_command="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
@@ -39,24 +38,42 @@ data:
     REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
 
     echo "----------$REDIS_MASTER_HOST-------------"
-
     echo "----------$REDIS_MASTER_PORT_NUMBER------"
-
     echo "-----------------------------------------"
     echo " --------- ${#REDIS_SENTINEL_INFO[@]} ---- "
 
     if [[ ${#REDIS_SENTINEL_INFO[@]} == 0 ]]; then
       if [[ $HOSTNAME == "predis-sts-0" ]]; then
+        add_master_with_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 SENTINEL MONITOR mymaster $(hostname -i) 6379 2"
+        add_master_with_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 SENTINEL MONITOR mymaster $(hostname -i) 6379 2"
+        add_master_with_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 SENTINEL MONITOR mymaster $(hostname -i) 6379 2"
+        ADD_MASTER_WITH_OTH_SENTINEL=($($add_master_with_0th_sentinel))
+        ADD_MASTER_WITH_1TH_SENTINEL=($($add_master_with_1th_sentinel))
+        ADD_MASTER_WITH_2TH_SENTINEL=($($add_master_with_2th_sentinel))
+
+        add_failover_with_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
+        add_failover_with_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
+        add_failover_with_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
+        ADD_FAILOVER_WITH_0TH_SENTINEL=($($add_failover_with_0th_sentinel))
+        ADD_FAILOVER_WITH_1TH_SENTINEL=($($add_failover_with_1th_sentinel))
+        ADD_FAILOVER_WITH_2TH_SENTINEL=($($add_failover_with_2th_sentinel))
+
+
+        add_down_after_with_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
+        add_down_after_with_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
+        add_down_after_with_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
+        ADD_DOWN_AFTER_WITH_0TH_SENTINEL=($($add_down_after_with_0th_sentinel))
+        ADD_DOWN_AFTER_WITH_1TH_SENTINEL=($($add_down_after_with_1th_sentinel))
+        ADD_DOWN_AFTER_WITH_2TH_SENTINEL=($($add_down_after_with_2th_sentinel))
+
         exec redis-server /data/redis.conf
       else
         echo -e "\nslaveof predis-sts-0.predis-svc.default.svc.cluster.local 6379" >>/data/redis.conf
         exec redis-server /data/redis.conf
       fi
     else
-
       ping_command="timeout 2 redis-cli -h $REDIS_MASTER_HOST -p 6379 ping"
       PONG=($($ping_command))
-
       echo "------ pn = $PONG  ------ "
       if [[ $PONG == "PONG" ]]; then
         echo "---- paichi pong   for $HOSTNAME ------- "
@@ -76,11 +93,25 @@ data:
           REMOVE_MASTER_FROM_1TH_SENTINEL=($($remove_master_from_1th_sentinel))
           REMOVE_MASTER_FROM_2TH_SENTINEL=($($remove_master_from_2th_sentinel))
 
-
-
           ADD_MASTER_WITH_OTH_SENTINEL=($($add_master_with_0th_sentinel))
           ADD_MASTER_WITH_1TH_SENTINEL=($($add_master_with_1th_sentinel))
           ADD_MASTER_WITH_2TH_SENTINEL=($($add_master_with_2th_sentinel))
+
+
+          add_failover_with_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
+          add_failover_with_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
+          add_failover_with_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
+          ADD_FAILOVER_WITH_0TH_SENTINEL=($($add_failover_with_0th_sentinel))
+          ADD_FAILOVER_WITH_1TH_SENTINEL=($($add_failover_with_1th_sentinel))
+          ADD_FAILOVER_WITH_2TH_SENTINEL=($($add_failover_with_2th_sentinel))
+
+
+          add_down_after_with_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
+          add_down_after_with_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
+          add_down_after_with_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
+          ADD_DOWN_AFTER_WITH_0TH_SENTINEL=($($add_down_after_with_0th_sentinel))
+          ADD_DOWN_AFTER_WITH_1TH_SENTINEL=($($add_down_after_with_1th_sentinel))
+          ADD_DOWN_AFTER_WITH_2TH_SENTINEL=($($add_down_after_with_2th_sentinel))
 
           a="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
           zero="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
@@ -91,16 +122,10 @@ data:
           _0_th=$($zero)
           _1_th=$($one)
           _2_th=$($two)
-
            echo "-------- all  --  $(echo "${all[0]}"| awk 'NR==1') ----- "
            echo "-------- 0th sentinel --- $(echo "${_0_th[0]}"| awk 'NR==1')  ----- "
            echo "-------- 1th sentinel --- $(echo "${_1_th[0]}"| awk 'NR==1') ----- "
            echo "-------- 2th sentinel --- $(echo "${_2_th[0]}"| awk 'NR==1') ----- "
-
-          # while [[ ($($redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster)) -eq "predis-sts-0.predis-svc.default.svc" ]]
-          # do
-          #  sleep 1
-          # done
 
         else
           echo -e "\nslaveof predis-sts-0.predis-svc.default.svc.cluster.local 6379" >>/data/redis.conf
@@ -109,11 +134,29 @@ data:
       fi
     fi
 
-#    if [[ "$HOSTNAME" == "predis-sts-0" ]]; then
-#      echo "..........$HOSTNAME"
-#      exec redis-server /data/redis.conf
-#    else
-#      echo -e "\nslaveof predis-sts-0.predis-svc.default.svc.cluster.local 6379" >>/data/redis.conf
-#      exec redis-server /data/redis.conf
-#    fi
+
+  prestop.sh: |-
+    #!/bin/bash
+
+    sentinel_info_command="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
+    REDIS_SENTINEL_INFO=($($sentinel_info_command))
+    REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
+    REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
+
+    myip=$(hostname -i)
+    echo "entered prestoop--------------------------" >/proc/1/fd/1
+
+
+    if [[ $REDIS_MASTER_HOST==$myip ]]; then
+      force_failover="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL failover mymaster"
+      FORCE_FAILOVER=($($force_failover))
+      sleep 1
+    fi
+
+    #current master
+    com="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
+    COM=($($com))
+    masterhost=${COM[0]}
+    echo "current master host --------------------------$masterhost" >/proc/1/fd/1
+
 

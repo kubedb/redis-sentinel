@@ -7,11 +7,8 @@ metadata:
     app: senti-conf
 data:
   sentinel.conf: |-
-    bind 0.0.0.0
+    protected-mode no
     port 26379
-    sentinel monitor mymaster predis-sts-0.predis-svc.default.svc 6379 2
-    sentinel down-after-milliseconds mymaster 5000
-    sentinel failover-timeout mymaster 5000
     SENTINEL resolve-hostnames yes
     SENTINEL announce-hostnames yes
 
