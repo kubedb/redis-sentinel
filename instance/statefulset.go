@@ -90,13 +90,13 @@ func CreateStatefulset(image string, replica int32) {
 							Name:            "predis",
 							Image:          "redis:6.2.1",
 							ImagePullPolicy: "IfNotPresent",
-							Lifecycle: &apiv1.Lifecycle{
-								PreStop: &apiv1.Handler{
-									Exec: &apiv1.ExecAction{
-										Command: []string{"/scripts/prestop.sh"},
-									},
-								},
-							},
+							//Lifecycle: &apiv1.Lifecycle{
+							//	PreStop: &apiv1.Handler{
+							//		Exec: &apiv1.ExecAction{
+							//			Command: []string{"/scripts/prestop.sh"},
+							//		},
+							//	},
+							//},
 							Command: []string{
 								"/scripts/run.sh",
 							},
