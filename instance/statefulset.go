@@ -4,11 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"gomodules.xyz/pointer"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"path/filepath"
 
-	"gomodules.xyz/pointer"
+	_ "gomodules.xyz/pointer"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +18,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-//CreateClientset-------------------------------------------------------------------- create an clients ------------------------------------------------------
+// CreateClientset CreateClientset-------------------------------------------------------------------- create an clients ------------------------------------------------------
 func CreateClientset() kubernetes.Interface {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
@@ -38,7 +39,7 @@ func CreateClientset() kubernetes.Interface {
 	return clientset
 }
 
-//CreateStatefulset -------------------------------------------------------------------- create the statefulset ---------------------------------------------------
+// CreateStatefulset CreateStateful -------------------------------------------------------------------- create the statefulset ---------------------------------------------------
 func CreateStatefulset(image string, replica int32) {
 
 	var clientset = CreateClientset()
@@ -50,7 +51,7 @@ func CreateStatefulset(image string, replica int32) {
 			Name: "predis-sts",
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: int32Ptr(3),
+			Replicas: int32Ptr(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "predisdb",
@@ -85,11 +86,12 @@ func CreateStatefulset(image string, replica int32) {
 					//		},
 					//	},
 					//},
+
 					Containers: []apiv1.Container{
 						{
 							Name:            "predis",
-							Image:          "redis:6.2.1",
-							ImagePullPolicy: "IfNotPresent",
+							Image:          "pranganmajumder/predis:0.0.0",
+							ImagePullPolicy: "Always",
 							//Lifecycle: &apiv1.Lifecycle{
 							//	PreStop: &apiv1.Handler{
 							//		Exec: &apiv1.ExecAction{
@@ -97,14 +99,24 @@ func CreateStatefulset(image string, replica int32) {
 							//		},
 							//	},
 							//},
+							//var peerFinderLocation := fmt.Sprintf("%v/peer-finder", "/usr/local/bin/peer-finder")
+							//var shardScriptName := fmt.Sprintf("%v/run.sh", "/scripts/run.sh")
 							Command: []string{
-								"/scripts/run.sh",
+								//"/scripts/run.sh",
+								"/bin/bash",
+								"-c",
+								"/usr/local/bin/peer-finder" + " -on-start=" + "../scripts/run.sh" + " -service=" + "predis-svc",
+								//"peer-finder",
 							},
 							//Args: []string{
-							//	//"cd /data/db && redis-server /data/predis-data/redis.conf --port 6380",
-							//	//"/data/scripts/start-node.sh",
-							//	"redis-server /data/redis.conf",
+							//	"-on-start",
+							//	"/scripts/run.sh",
+							//	" -service",
+							//	"predis-svc",
+							//	"-ns",
+							//	"default",
 							//},
+
 							SecurityContext: &apiv1.SecurityContext{
 
 								RunAsUser: pointer.Int64P(0),

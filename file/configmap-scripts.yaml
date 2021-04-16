@@ -33,6 +33,18 @@ data:
     echo "..........$HOSTNAME"
 
 
+    my_hostname=$(hostname)
+    log "Bootstrapping MongoDB replica set member: $my_hostname"
+
+    log "Reading standard input..."
+    while read -ra line; do
+        if [[ "${line}" == *"${my_hostname}"* ]]; then
+            service_name="$line"
+            continue
+        fi
+        peers=("${peers[@]}" "$line")
+        echo "peers  ---------- $peers---------"
+    done
 
     sleep 6
     sentinel_info_command="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
