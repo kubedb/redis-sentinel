@@ -5,8 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"gomodules.xyz/pointer"
-
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/labels"
 	"path/filepath"
 
 	_ "gomodules.xyz/pointer"
@@ -39,6 +39,13 @@ func CreateClientset() kubernetes.Interface {
 	return clientset
 }
 
+func isIP(addressType string) bool  {
+	if addressType=="IPv4" || addressType=="IPv6" || addressType=="IP" {
+		return true
+	}
+	return false
+}
+
 // CreateStatefulset CreateStateful -------------------------------------------------------------------- create the statefulset ---------------------------------------------------
 func CreateStatefulset(image string, replica int32) {
 
@@ -46,12 +53,36 @@ func CreateStatefulset(image string, replica int32) {
 	fmt.Println("Creating Statefulset ... ")
 	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
 
+
+	//var peerFinderArgs = []string{
+	//	fmt.Sprintf("-address-type=IPv4"),
+	//}
+	//peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-selector=predisdb"))
+
+	//var mp = map[string]string{}
+	//mp["namespace"]="default"
+	//mp["service"]="predis-svc"
+	//var userArgs = meta_util.ParseArgumentListToMap(mp)
+
+
+	peerFinderArgs := []string{
+		fmt.Sprintf("-address-type=%s", "IP"),
+	}
+	if isIP("IP") {
+		peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-selector=%s", labels.Set(map[string]string{"app": "predisdb"}).String()))
+	} else {
+		peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-service=%s", "predis-svc"))
+	}
+	args := append(peerFinderArgs,
+		"-on-start=/on-start.sh abc",
+	)
+
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "predis-sts",
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: int32Ptr(1),
+			Replicas: int32Ptr(3),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "predisdb",
@@ -64,6 +95,7 @@ func CreateStatefulset(image string, replica int32) {
 					},
 				},
 				Spec: apiv1.PodSpec{
+					ServiceAccountName: "predis-account",
 					//InitContainers: []apiv1.Container{
 					//	{
 					//		Name:  "predis-init-container",
@@ -101,21 +133,24 @@ func CreateStatefulset(image string, replica int32) {
 							//},
 							//var peerFinderLocation := fmt.Sprintf("%v/peer-finder", "/usr/local/bin/peer-finder")
 							//var shardScriptName := fmt.Sprintf("%v/run.sh", "/scripts/run.sh")
+
+
+
 							Command: []string{
-								//"/scripts/run.sh",
-								"/bin/bash",
-								"-c",
-								"/usr/local/bin/peer-finder" + " -on-start=" + "../scripts/run.sh" + " -service=" + "predis-svc",
-								//"peer-finder",
+								"/usr/local/bin/peer-finder",
 							},
-							//Args: []string{
-							//	"-on-start",
-							//	"/scripts/run.sh",
-							//	" -service",
-							//	"predis-svc",
-							//	"-ns",
-							//	"default",
-							//},
+							Args: args,
+
+							Env: []apiv1.EnvVar{
+								{
+									Name: "POD_IP",
+									ValueFrom: &apiv1.EnvVarSource{
+										FieldRef: &apiv1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+							},
 
 							SecurityContext: &apiv1.SecurityContext{
 
@@ -189,8 +224,14 @@ func CreateStatefulset(image string, replica int32) {
 				},
 			},
 			ServiceName: "predis-svc",
+
 		},
 	}
+	//if isIP("IPv4"){
+	//	statefulSet.Spec.Template.Spec.HostNetwork=true
+	//	statefulSet.Spec.Template.Spec.DNSPolicy= apiv1.DNSPolicy("ClusterFirstWithHostNet")
+	//
+	//}
 
 	resultSts, errSts := stsClient.Create(context.TODO(), statefulSet, metav1.CreateOptions{})
 	if errSts != nil {

@@ -8,7 +8,11 @@ create:
 	go build .
 	./predis create sentistatefulset
 	sleep 10
+	./predis create sa
+	./predis create role
+	./predis create binding
 	./predis create  statefulset
+
 apply:
 	kubectl apply -f file/configmap-scripts.yaml
 	kubectl apply -f file/sentiConfigmap.yaml
