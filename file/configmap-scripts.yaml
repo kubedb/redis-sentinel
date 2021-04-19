@@ -37,6 +37,7 @@ data:
     echo "Bootstrapping RedisDB replica set member: $my_hostname"
     echo  "Reading standard input..."
 
+    # Peer finder -----------
     while read -ra line; do
         tmp=$(echo -n ${line[0]} | sed -e "s/.svc.cluster.local//g")
         if [[ "$HOST_ADDRESS_TYPE" == "IPv6" ]]; then
@@ -47,7 +48,10 @@ data:
     done
     echo "Trying to start group with peers'${peers[*]}'"
 
-
+    for ip in "${peers[@]}"
+    do
+      echo "ip is ------------ $ip -------- "
+    done
 
     sleep 6
     sentinel_info_command="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
@@ -99,56 +103,24 @@ data:
         echo -e "\nslaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER" >> /data/redis.conf
         exec redis-server /data/redis.conf
       else
-        if [[ $HOSTNAME == "predis-sts-0" ]]; then
-          remove_master_from_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 SENTINEL REMOVE mymaster"
-          remove_master_from_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 SENTINEL REMOVE mymaster"
-          remove_master_from_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 SENTINEL REMOVE mymaster"
-
-          add_master_with_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 SENTINEL MONITOR mymaster $(hostname -i) 6379 2"
-          add_master_with_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 SENTINEL MONITOR mymaster $(hostname -i) 6379 2"
-          add_master_with_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 SENTINEL MONITOR mymaster $(hostname -i) 6379 2"
-
-          REMOVE_MASTER_FROM_0TH_SENTINEL=($($remove_master_from_0th_sentinel))
-          REMOVE_MASTER_FROM_1TH_SENTINEL=($($remove_master_from_1th_sentinel))
-          REMOVE_MASTER_FROM_2TH_SENTINEL=($($remove_master_from_2th_sentinel))
-
-          ADD_MASTER_WITH_OTH_SENTINEL=($($add_master_with_0th_sentinel))
-          ADD_MASTER_WITH_1TH_SENTINEL=($($add_master_with_1th_sentinel))
-          ADD_MASTER_WITH_2TH_SENTINEL=($($add_master_with_2th_sentinel))
-
-
-          add_failover_with_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
-          add_failover_with_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
-          add_failover_with_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout"
-          ADD_FAILOVER_WITH_0TH_SENTINEL=($($add_failover_with_0th_sentinel))
-          ADD_FAILOVER_WITH_1TH_SENTINEL=($($add_failover_with_1th_sentinel))
-          ADD_FAILOVER_WITH_2TH_SENTINEL=($($add_failover_with_2th_sentinel))
+        # Got invalid IP from sentinel, check if the given ip is in peer list or not
+        flag=0
+        for ip in "${peers[@]}"
+        do
+          if [[ $REDIS_MASTER_HOST==$ip ]]; then
+            flag=1
+          fi
+          # check if the peer is master or slave
+          cnt_master=0
+          role="redis-cli -h $ip -p 6379 info role"
+          ROLE=($($role))
+          if [[ $ROLE == "master" ]]; then
+            (( cnt_master++ ))
+          fi
+        done
 
 
-          add_down_after_with_0th_sentinel="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
-          add_down_after_with_1th_sentinel="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
-          add_down_after_with_2th_sentinel="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 sentinel set mymaster down-after-milliseconds $down"
-          ADD_DOWN_AFTER_WITH_0TH_SENTINEL=($($add_down_after_with_0th_sentinel))
-          ADD_DOWN_AFTER_WITH_1TH_SENTINEL=($($add_down_after_with_1th_sentinel))
-          ADD_DOWN_AFTER_WITH_2TH_SENTINEL=($($add_down_after_with_2th_sentinel))
 
-          a="redis-cli -h sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
-          zero="redis-cli -h sentinel-sts-0.sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
-          one="redis-cli -h sentinel-sts-1.sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
-          two="redis-cli -h sentinel-sts-2.sentinel-svc.default.svc -p 26379 SENTINEL get-master-addr-by-name mymaster"
-
-          all=$($a)
-          _0_th=$($zero)
-          _1_th=$($one)
-          _2_th=$($two)
-           echo "-------- all  --  $(echo "${all[0]}"| awk 'NR==1') ----- "
-           echo "-------- 0th sentinel --- $(echo "${_0_th[0]}"| awk 'NR==1')  ----- "
-           echo "-------- 1th sentinel --- $(echo "${_1_th[0]}"| awk 'NR==1') ----- "
-           echo "-------- 2th sentinel --- $(echo "${_2_th[0]}"| awk 'NR==1') ----- "
-
-        else
-          echo -e "\nslaveof predis-sts-0.predis-svc.default.svc.cluster.local 6379" >>/data/redis.conf
-        fi
         exec redis-server /data/redis.conf
       fi
     fi

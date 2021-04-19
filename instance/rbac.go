@@ -60,7 +60,7 @@ func CreateRole(ns string, name string)  {
 		Rules: []v1alpha1.PolicyRule{
 			{
 				APIGroups: []string{"*"},
-				Resources: []string{"*"},
+				Resources: []string{"pods"},
 				Verbs:     []string{"*"},
 			},
 		},

@@ -54,17 +54,6 @@ func CreateStatefulset(image string, replica int32) {
 	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
 
 
-	//var peerFinderArgs = []string{
-	//	fmt.Sprintf("-address-type=IPv4"),
-	//}
-	//peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-selector=predisdb"))
-
-	//var mp = map[string]string{}
-	//mp["namespace"]="default"
-	//mp["service"]="predis-svc"
-	//var userArgs = meta_util.ParseArgumentListToMap(mp)
-
-
 	peerFinderArgs := []string{
 		fmt.Sprintf("-address-type=%s", "IP"),
 	}
