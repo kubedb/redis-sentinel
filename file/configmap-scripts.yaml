@@ -213,7 +213,16 @@ data:
                   for ip in "${peers[@]}"
                   do
                       echo "atkay ache ================ "
-                      replicaof=$(redis-cli -h $ip -p 6379 replicaof predis-sts-0.predis-svc.default.svc 6379)
+                      # zodi master pod na hoy & 0th pod ar replica na hoy
+
+                      ROLE=$(redis-cli -h $ip -p 6379 info replication | grep ^role)
+                      MASTER_HOST=$(redis-cli -h $ip -p 6379 info replication | grep ^master_host)
+                      EXPECTED_MASTER_HOST="predis-sts-0.predis-svc.default.svc"
+
+                      if [[ $ROLE == "role:slave" && $MASTER_HOST -ne $EXPECTED_MASTER_HOST ]]; then
+                        replicaof=$(redis-cli -h $ip -p 6379 replicaof predis-sts-0.predis-svc.default.svc 6379)
+                      fi
+
                   done
                   if [[ $(hostname) == "predis-sts-0" ]]; then
                       echo "having problem-----"
