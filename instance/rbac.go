@@ -9,7 +9,6 @@ import (
 )
 
 
-
 func CreateRoleBinding(ns string, roleName string, saName string)  {
 
 	rolebinding := &v1alpha1.ClusterRoleBinding{

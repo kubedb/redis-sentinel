@@ -10,6 +10,6 @@ require (
 	k8s.io/api v0.18.9
 	k8s.io/apimachinery v0.18.9
 	k8s.io/client-go v0.18.9
-	kmodules.xyz/client-go v0.0.0-20210313172452-3345a02bec66
+	kmodules.xyz/client-go v0.0.0-20210313172452-3345a02bec66 // indirect
 
 )
