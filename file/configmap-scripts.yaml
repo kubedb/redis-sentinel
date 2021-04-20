@@ -45,7 +45,6 @@ data:
             tmp="[$tmp]"
         fi
         peers=("${peers[@]}" "$tmp")
-
     done
     echo "Trying to start group with peers'${peers[*]}'"
 
