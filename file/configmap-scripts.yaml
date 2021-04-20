@@ -10,6 +10,7 @@ data:
     #!/bin/bash
     echo "-----------run.sh variable-------------------$@-----------------------"
     cp /config/redis.conf /data/redis.conf
+    replica_of_sentinel=$REPLICA_OF_SENTINEL
     down=5000
     timeout=5000
     flag=1
@@ -68,7 +69,7 @@ data:
     if [[ ${#REDIS_SENTINEL_INFO[@]} == 0 ]]; then
         if [[ $HOSTNAME == "predis-sts-0" ]]; then
             echo "add other sentinel configuration with all other sentinel---------------------------"
-            for (( i=0; i<3; i++ ))
+            for (( i=0; i<$replica_of_sentinel; i++ ))
             do
                 ADD_MASTER=$(redis-cli -h sentinel-sts-$i.sentinel-svc.default.svc -p 26379 SENTINEL MONITOR mymaster $(hostname -i) 6379 2)
                 ADD_FAILOVER_TIME_OUT=$(redis-cli -h sentinel-sts-$i.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout)
@@ -165,13 +166,13 @@ data:
                 else
                     echo "make 0th pod master & the rest of it as the slave of master 0th"
                     echo "Remove master from every sentinel --------------------- "
-                    for (( i=0; i<3; i++ ))
+                    for (( i=0; i<$replica_of_sentinel; i++ ))
                     do
                         REMOVE_MASTER=$(redis-cli -h sentinel-sts-$i.sentinel-svc.default.svc -p 26379 SENTINEL REMOVE mymaster)
                     done
 
                     echo "add other sentinel configuration with all other sentinel---------------------------"
-                    for (( i=0; i<3; i++ ))
+                    for (( i=0; i<$replica_of_sentinel; i++ ))
                     do
                         ADD_MASTER=$(redis-cli -h sentinel-sts-$i.sentinel-svc.default.svc -p 26379 SENTINEL MONITOR mymaster predis-sts-0.predis-svc.default.svc 6379 2)
                         ADD_FAILOVER_TIME_OUT=$(redis-cli -h sentinel-sts-$i.sentinel-svc.default.svc -p 26379 sentinel set mymaster failover-timeout $timeout)
@@ -181,27 +182,25 @@ data:
                     # add replicaof predis-sts-0 with previous pod , (not restarted new pod, cz it'll not add with restarted pod as the server isn't running)
                     for ip in "${peers[@]}"
                     do
-                        echo "atkay ache ================ "
-                        # zodi master pod na hoy & 0th pod ar replica na hoy
-
+                        echo "dhukchi loop a ================ "
                         ROLE=$(redis-cli -h $ip -p 6379 info replication | grep ^role)
                         MASTER_HOST=$(redis-cli -h $ip -p 6379 info replication | grep ^master_host)
                         EXPECTED_MASTER_HOST="predis-sts-0.predis-svc.default.svc"
 
+                        # zodi slave pod hoy & 0th pod ar replica na hoy
                         if [[ $ROLE == "role:slave" && $MASTER_HOST -ne $EXPECTED_MASTER_HOST ]]; then
                           replicaof=$(redis-cli -h $ip -p 6379 replicaof predis-sts-0.predis-svc.default.svc 6379)
                         fi
                     done
 
                     if [[ $(hostname) == "predis-sts-0" ]]; then
-                        echo "having problem-----"
+                        echo "make predis-sts-0 as the master -----"
                         exec redis-server /data/redis.conf
                     else
                         echo "connected as slave------------------------- "
                         echo -e "\nreplicaof predis-sts-0.predis-svc.default.svc 6379" >> /data/redis.conf
                         exec redis-server /data/redis.conf
                     fi
-                    echo "atkay achi , ki korbo??  ================ "
                 fi
             else
                 echo "asche akhane --------------------- "
