@@ -9,8 +9,9 @@ data:
   sentinel.conf: |-
     protected-mode no
     port 26379
+    sentinel announce-ip sentinel-sts-0.sentinel-svc.default.svc
     SENTINEL resolve-hostnames yes
-
+    SENTINEL announce-hostnames yes
 
 
 
