@@ -71,7 +71,7 @@ func CreateStatefulset(image string, replica int32) {
 			Name: "predis-sts",
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: int32Ptr(1),
+			Replicas: int32Ptr(3),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "predisdb",

@@ -233,5 +233,3 @@ data:
 #    COM=($($com))
 #    masterhost=${COM[0]}
 #    echo "current master host --------------------------$masterhost" >/proc/1/fd/1
-
-
