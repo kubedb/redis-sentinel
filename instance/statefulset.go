@@ -63,7 +63,7 @@ func CreateStatefulset(image string, replica int32) {
 		peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-service=%s", "predis-svc"))
 	}
 	args := append(peerFinderArgs,
-		"-on-start=/on-start.sh abc",
+		"-on-start=/scripts/on-start.sh",
 	)
 
 	statefulSet := &appsv1.StatefulSet{
@@ -85,48 +85,37 @@ func CreateStatefulset(image string, replica int32) {
 				},
 				Spec: apiv1.PodSpec{
 					ServiceAccountName: "predis-account",
-					//InitContainers: []apiv1.Container{
-					//	{
-					//		Name:  "predis-init-container",
-					//		Image: "pranganmajumder/predis-init:0.0.1",
-					//		VolumeMounts: []apiv1.VolumeMount{
-					//			{
-					//				Name:      "config-vol",
-					//				MountPath: "/data/predis-data",
-					//			},
-					//		},
-					//		Env: []apiv1.EnvVar{
-					//			{
-					//				Name: "POD_NAME",
-					//				ValueFrom: &apiv1.EnvVarSource{
-					//					FieldRef: &apiv1.ObjectFieldSelector{
-					//						FieldPath: "metadata.name",
-					//					},
-					//				},
-					//			},
-					//		},
-					//	},
-					//},
+					InitContainers: []apiv1.Container{
+						{
+							Name:            "predis",
+							Image:          "pranganmajumder/predis-init:0.0.2",
+							ImagePullPolicy: "IfNotPresent",
 
+							SecurityContext: &apiv1.SecurityContext{
+
+								RunAsUser: pointer.Int64P(0),
+							},
+
+							VolumeMounts: []apiv1.VolumeMount{
+								{
+									Name:      "config-vol",
+									MountPath: "/conf",
+								},
+								{
+									Name:      "script-vol",
+									MountPath: "/scripts",
+								},
+							},
+						},
+					},
 					Containers: []apiv1.Container{
 						{
 							Name:            "predis",
-							Image:          "pranganmajumder/predis:0.0.0",
-							ImagePullPolicy: "Always",
-							//Lifecycle: &apiv1.Lifecycle{
-							//	PreStop: &apiv1.Handler{
-							//		Exec: &apiv1.ExecAction{
-							//			Command: []string{"/scripts/prestop.sh"},
-							//		},
-							//	},
-							//},
-							//var peerFinderLocation := fmt.Sprintf("%v/peer-finder", "/usr/local/bin/peer-finder")
-							//var shardScriptName := fmt.Sprintf("%v/run.sh", "/scripts/run.sh")
-
-
+							Image:          "redis:6.2.1",
+							ImagePullPolicy: "IfNotPresent",
 
 							Command: []string{
-								"/usr/local/bin/peer-finder",
+								"/scripts/peer-finder",
 							},
 							Args: args,
 
@@ -160,7 +149,7 @@ func CreateStatefulset(image string, replica int32) {
 							VolumeMounts: []apiv1.VolumeMount{
 								{
 									Name:      "config-vol",
-									MountPath: "/config",
+									MountPath: "/conf",
 								},
 								{
 									Name:      "predis-vol",
@@ -177,23 +166,13 @@ func CreateStatefulset(image string, replica int32) {
 						{
 							Name: "config-vol",
 							VolumeSource: apiv1.VolumeSource{
-								ConfigMap: &apiv1.ConfigMapVolumeSource{
-									LocalObjectReference: apiv1.LocalObjectReference{
-										Name: "predis-conf",
-									},
-									DefaultMode: int32Ptr(0777),
-								},
+								EmptyDir: &apiv1.EmptyDirVolumeSource{},
 							},
 						},
 						{
 							Name: "script-vol",
 							VolumeSource: apiv1.VolumeSource{
-								ConfigMap: &apiv1.ConfigMapVolumeSource{
-									LocalObjectReference: apiv1.LocalObjectReference{
-										Name: "predis-scripts",
-									},
-									DefaultMode: int32Ptr(0777),
-								},
+								EmptyDir: &apiv1.EmptyDirVolumeSource{},
 							},
 						},
 

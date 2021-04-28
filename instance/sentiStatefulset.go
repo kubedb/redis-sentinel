@@ -44,12 +44,6 @@ func CreateStatefulsetForSentinel() {
 							ImagePullPolicy: "IfNotPresent",
 							Command: []string{
 								"/scripts/run.sh",
-								//"sleep",
-								//"360000",
-
-								//"cp",
-								//"/config/sentinel.conf",
-								//"/data/sentinel.conf",
 							},
 
 							SecurityContext: &apiv1.SecurityContext{
