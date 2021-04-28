@@ -36,14 +36,38 @@ func CreateStatefulsetForSentinel() {
 						"app": "sentinel",
 					},
 				},
+
 				Spec: apiv1.PodSpec{
+					InitContainers: []apiv1.Container{
+						{
+							Name:            "senti-init",
+							Image:          "pranganmajumder/predis-init:0.0.3",
+							ImagePullPolicy: "IfNotPresent",
+
+							SecurityContext: &apiv1.SecurityContext{
+
+								RunAsUser: pointer.Int64P(0),
+							},
+
+							VolumeMounts: []apiv1.VolumeMount{
+								{
+									Name:      "config-vol",
+									MountPath: "/conf",
+								},
+								{
+									Name:      "script-vol",
+									MountPath: "/scripts",
+								},
+							},
+						},
+					},
 					Containers: []apiv1.Container{
 						{
 							Name:            "senti-cont",
 							Image:           "redis:6.2.1",
 							ImagePullPolicy: "IfNotPresent",
 							Command: []string{
-								"/scripts/run.sh",
+								"/scripts/sentinel.sh",
 							},
 
 							SecurityContext: &apiv1.SecurityContext{
@@ -60,7 +84,7 @@ func CreateStatefulsetForSentinel() {
 							VolumeMounts: []apiv1.VolumeMount{
 								{
 									Name: "config-vol",
-									MountPath: "/config",
+									MountPath: "/conf",
 								},
 								{
 									Name: "script-vol",
@@ -77,23 +101,13 @@ func CreateStatefulsetForSentinel() {
 						{
 							Name: "config-vol",
 							VolumeSource: apiv1.VolumeSource{
-								ConfigMap: &apiv1.ConfigMapVolumeSource{
-									LocalObjectReference: apiv1.LocalObjectReference{
-										Name: "senti-conf",
-									},
-									DefaultMode: int32Ptr(0777),
-								},
+								EmptyDir: &apiv1.EmptyDirVolumeSource{},
 							},
 						},
 						{
 							Name: "script-vol",
 							VolumeSource: apiv1.VolumeSource{
-								ConfigMap: &apiv1.ConfigMapVolumeSource{
-									LocalObjectReference: apiv1.LocalObjectReference{
-										Name: "sentinel-scripts",
-									},
-									DefaultMode: int32Ptr(0777),
-								},
+								EmptyDir: &apiv1.EmptyDirVolumeSource{},
 							},
 						},
 					},
