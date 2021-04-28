@@ -34,6 +34,7 @@ data:
       echo "getting ----- "
       echo "flag =  $flag "
       not_exists_dns_entry
+      sleep 1
     done
     echo "..........$HOSTNAME------------"
 
@@ -79,7 +80,7 @@ data:
             done
             exec redis-server /data/redis.conf
         else
-            echo -e "\nslaveof predis-sts-0.predis-svc.default.svc.cluster.local 6379" >>/data/redis.conf
+            echo -e "\nreplicaof predis-sts-0.predis-svc.default.svc 6379" >>/data/redis.conf
             exec redis-server /data/redis.conf
         fi
     else
@@ -88,7 +89,7 @@ data:
         echo "------ pn = $PONG  ------ "
         if [[ $PONG == "PONG" ]]; then
             echo "---- paichi pong   for $HOSTNAME ------- "
-            echo -e "\nslaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER" >> /data/redis.conf
+            echo -e "\nreplicaof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER" >> /data/redis.conf
             exec redis-server /data/redis.conf
         else
             echo "Got invalid IP from sentinel, check how many master is right now in peer list"
@@ -188,10 +189,13 @@ data:
                         echo "dhukchi loop a ================ "
                         ROLE=$(redis-cli -h $ip -p 6379 info replication | grep ^role)
                         MASTER_HOST=$(redis-cli -h $ip -p 6379 info replication | grep ^master_host)
-                        EXPECTED_MASTER_HOST="predis-sts-0.predis-svc.default.svc"
+                        EXPECTED_MASTER_HOST="master_host:predis-sts-0.predis-svc.default.svc"
 
+                        echo "role--------------$ROLE---------------- "
+                        echo "master_host-------- $MASTER_HOST--------------- "
                         # zodi slave pod hoy & 0th pod ar replica na hoy
                         if [[ $ROLE == "role:slave" && $MASTER_HOST -ne $EXPECTED_MASTER_HOST ]]; then
+                          echo " hey mama ------ "
                           replicaof=$(redis-cli -h $ip -p 6379 replicaof predis-sts-0.predis-svc.default.svc 6379)
                         fi
                     done

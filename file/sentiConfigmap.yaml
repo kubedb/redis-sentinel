@@ -10,8 +10,8 @@ data:
     protected-mode no
     port 26379
 
-    SENTINEL resolve-hostnames yes
-    SENTINEL announce-hostnames yes
+    # SENTINEL resolve-hostnames yes
+    # SENTINEL announce-hostnames yes
 
 
 
