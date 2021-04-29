@@ -41,7 +41,7 @@ func CreateStatefulsetForSentinel() {
 					InitContainers: []apiv1.Container{
 						{
 							Name:            "senti-init",
-							Image:          "pranganmajumder/predis-init:0.0.4",
+							Image:          "pranganmajumder/predis:1.0.0",
 							ImagePullPolicy: "IfNotPresent",
 
 							SecurityContext: &apiv1.SecurityContext{
@@ -68,6 +68,13 @@ func CreateStatefulsetForSentinel() {
 							ImagePullPolicy: "IfNotPresent",
 							Command: []string{
 								"/scripts/sentinel.sh",
+							},
+
+							Env: []apiv1.EnvVar{
+								{
+									Name: "REPLICA_OF_PREDIS",
+									Value: "3",
+								},
 							},
 
 							SecurityContext: &apiv1.SecurityContext{

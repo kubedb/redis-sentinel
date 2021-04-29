@@ -88,7 +88,7 @@ func CreateStatefulset(image string, replica int32) {
 					InitContainers: []apiv1.Container{
 						{
 							Name:            "predis-init",
-							Image:          "pranganmajumder/predis-init:0.0.4",
+							Image:          "pranganmajumder/predis:1.0.0",
 							ImagePullPolicy: "IfNotPresent",
 
 							SecurityContext: &apiv1.SecurityContext{
