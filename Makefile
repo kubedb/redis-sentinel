@@ -7,6 +7,7 @@ clean:
 create:
 
 	go build .
+	./predis create cert
 	./predis create senti-service
 	./predis create redis-service
 	./predis create sentistatefulset

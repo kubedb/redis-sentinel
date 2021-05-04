@@ -10,7 +10,7 @@ import (
 func CreateHeadlessService() {
 	fmt.Println("Creating Service ...")
 	var clientset = CreateClientset()
-	svcClient := clientset.CoreV1().Services(apiv1.NamespaceDefault)
+	svcClient := clientset.CoreV1().Services("demo")
 	service := &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "predis-svc",
@@ -44,7 +44,7 @@ func CreateHeadlessService() {
 func CreateSentinelHeadlessService() {
 	fmt.Println("Creating Service for sentinel...")
 	var clientset = CreateClientset()
-	svcClient := clientset.CoreV1().Services(apiv1.NamespaceDefault)
+	svcClient := clientset.CoreV1().Services("demo")
 	service := &apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sentinel-svc",

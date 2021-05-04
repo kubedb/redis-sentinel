@@ -14,7 +14,7 @@ var createRBAC = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Created Service  for redis server ")
-		instance.CreateRole("default", "predis-role")
+		instance.CreateRole("demo", "predis-role")
 	},
 }
 
@@ -27,7 +27,7 @@ var createBinding = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Created Service  for redis server ")
 		// 3rd default is service account name.
-		instance.CreateRoleBinding("default", "predis-role", "predis-account")
+		instance.CreateRoleBinding("demo", "predis-role", "predis-account")
 
 	},
 }
@@ -42,7 +42,7 @@ var createSA = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Created Service  for redis server ")
 		// 3rd default is service account name.
-		instance.CreateServiceAccount("default", "predis-account")
+		instance.CreateServiceAccount("demo", "predis-account")
 
 	},
 }

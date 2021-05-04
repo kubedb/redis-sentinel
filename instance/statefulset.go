@@ -51,7 +51,7 @@ func CreateStatefulset(image string, replica int32) {
 
 	var clientset = CreateClientset()
 	fmt.Println("Creating Statefulset ... ")
-	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
+	stsClient := clientset.AppsV1().StatefulSets("demo")
 
 
 	peerFinderArgs := []string{
@@ -159,6 +159,10 @@ func CreateStatefulset(image string, replica int32) {
 									Name:      "script-vol",
 									MountPath: "/scripts",
 								},
+								{
+									Name: "cert-vol",
+									MountPath: "/certs",
+								},
 							},
 						},
 					},
@@ -173,6 +177,14 @@ func CreateStatefulset(image string, replica int32) {
 							Name: "script-vol",
 							VolumeSource: apiv1.VolumeSource{
 								EmptyDir: &apiv1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "cert-vol",
+							VolumeSource: apiv1.VolumeSource{
+								Secret: &apiv1.SecretVolumeSource{
+									SecretName:  "example-com-tls",
+								},
 							},
 						},
 
@@ -217,7 +229,7 @@ func ListStatefulSet() {
 	fmt.Println("*****   Listing all StatefulSets   ******  ")
 	var clientset = CreateClientset()
 
-	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
+	stsClient := clientset.AppsV1().StatefulSets("demo")
 	list, err := stsClient.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Println(err)
@@ -245,7 +257,7 @@ func ListStatefulSet() {
 
 func DeleteStatefulSet() {
 	var clientset = CreateClientset()
-	deploymentsClient := clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
+	deploymentsClient := clientset.AppsV1().Deployments("demo")
 
 	fmt.Println("Deleting deployment...")
 	deletePolicy := metav1.DeletePropagationForeground

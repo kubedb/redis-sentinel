@@ -17,7 +17,7 @@ import (
 func CreateStatefulsetForSentinel() {
 	var clientset = CreateClientset()
 	fmt.Println("Creating Statefulset ... ")
-	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
+	stsClient := clientset.AppsV1().StatefulSets("demo")
 
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
