@@ -101,6 +101,10 @@ func CreateStatefulsetForSentinel() {
 									Name:      "senti-vol",
 									MountPath: "/data",
 								},
+								{
+									Name: "cert-vol",
+									MountPath: "/certs",
+								},
 							},
 						},
 					},
@@ -115,6 +119,14 @@ func CreateStatefulsetForSentinel() {
 							Name: "script-vol",
 							VolumeSource: apiv1.VolumeSource{
 								EmptyDir: &apiv1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "cert-vol",
+							VolumeSource: apiv1.VolumeSource{
+								Secret: &apiv1.SecretVolumeSource{
+									SecretName:  "example-com-tls",
+								},
 							},
 						},
 					},

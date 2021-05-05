@@ -129,6 +129,28 @@ func CreateStatefulset(image string, replica int32) {
 									},
 								},
 								{
+									Name:  "SECRET_USERNAME",
+									ValueFrom: &apiv1.EnvVarSource{
+										SecretKeyRef: &apiv1.SecretKeySelector{
+											LocalObjectReference: apiv1.LocalObjectReference{
+												Name: "predis-secret",
+											},
+											Key:  "username",
+										},
+									},
+								},
+								{
+									Name:  "SECRET_PASSWORD",
+									ValueFrom: &apiv1.EnvVarSource{
+										SecretKeyRef: &apiv1.SecretKeySelector{
+											LocalObjectReference: apiv1.LocalObjectReference{
+												Name: "predis-secret",
+											},
+											Key:  "password",
+										},
+									},
+								},
+								{
 									Name: "REPLICA_OF_SENTINEL",
 									Value: "3",
 								},

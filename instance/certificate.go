@@ -50,7 +50,7 @@ func CreateServerCert() (kutil.VerbType, error) {
 				PostalCodes:         nil,
 				SerialNumber:        "",
 			},
-			CommonName: "admin",
+			CommonName: "predis-sts-0.predis-svc.demo.svc",
 			Duration: &metav1.Duration{
 				Duration: 2*time.Hour,
 			},
@@ -58,7 +58,13 @@ func CreateServerCert() (kutil.VerbType, error) {
 				Duration: 1*time.Hour,
 			},
 			DNSNames: []string{
-				"predis-svc.default.svc",
+				"predis-sts-0.predis-svc.demo.svc",
+				"predis-sts-1.predis-svc.demo.svc",
+				"predis-sts-2.predis-svc.demo.svc",
+				"sentinel-sts-0.sentinel-svc.demo.svc",
+				"sentinel-sts-1.sentinel-svc.demo.svc",
+				"sentinel-sts-2.sentinel-svc.demo.svc",
+				"sentinel-svc.demo.svc",
 			},
 			IPAddresses: []string{
 				"127.0.0.1",
