@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/labels"
 	"path/filepath"
 
 	_ "gomodules.xyz/pointer"
@@ -54,17 +53,17 @@ func CreateStatefulset(image string, replica int32) {
 	stsClient := clientset.AppsV1().StatefulSets(apiv1.NamespaceDefault)
 
 
-	peerFinderArgs := []string{
-		fmt.Sprintf("-address-type=%s", "IP"),
-	}
-	if isIP("IP") {
-		peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-selector=%s", labels.Set(map[string]string{"app": "predisdb"}).String()))
-	} else {
-		peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-service=%s", "predis-svc"))
-	}
-	args := append(peerFinderArgs,
-		"-on-start=/scripts/on-start.sh",
-	)
+	//peerFinderArgs := []string{
+	//	fmt.Sprintf("-address-type=%s", "IP"),
+	//}
+	//if isIP("IP") {
+	//	peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-selector=%s", labels.Set(map[string]string{"app": "predisdb"}).String()))
+	//} else {
+	//	peerFinderArgs = append(peerFinderArgs, fmt.Sprintf("-service=%s", "predis-svc"))
+	//}
+	//args := append(peerFinderArgs,
+	//	"-on-start=/scripts/on-start.sh",
+	//)
 
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -115,9 +114,9 @@ func CreateStatefulset(image string, replica int32) {
 							ImagePullPolicy: "IfNotPresent",
 
 							Command: []string{
-								"/scripts/peer-finder",
+								"/scripts/on-start.sh",
 							},
-							Args: args,
+							//Args: args,
 
 							Env: []apiv1.EnvVar{
 								{
