@@ -14,10 +14,10 @@ create:
 	./predis create senti-service
 	./predis create redis-service
 	./predis create sentistatefulset
-#	sleep 20
-#	./predis create sa
-#	./predis create role
-#	./predis create binding
+	sleep 20
+	./predis create sa
+	./predis create role
+	./predis create binding
 #	./predis create  statefulset
 
 
