@@ -18,6 +18,6 @@ create:
 	./predis create sa
 	./predis create role
 	./predis create binding
-#	./predis create  statefulset
+	./predis create  statefulset
 
 
